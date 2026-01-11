@@ -4219,6 +4219,41 @@ inline bool ParseN2kNavigationInfo(const tN2kMsg &N2kMsg, unsigned char& SID, do
                             OriginWaypointNumber, DestinationWaypointNumber, DestinationLatitude, DestinationLongitude, WaypointClosingVelocity);
 }
 
+/************************************************************************//**
+ * \brief Parse PGN 129285 Message "Route / Waypoint List" (Header)
+ * \ingroup group_msgParse
+ *
+ * This parameter group provides a route header and a list of waypoints
+ * (variable-length). The PGN contains a fixed header followed by zero or more
+ * waypoint items. Each item includes waypoint ID, waypoint name (VarStr),
+ * and waypoint latitude/longitude.
+ *
+ * Use this function to parse the fixed header and obtain the index where the
+ * waypoint item list begins. Then iterate the items using
+ * \ref ParseN2kPGN129285Item (or its alias \ref ParseN2kRouteItem) until you
+ * have parsed \c nItems items.
+ *
+ * \param N2kMsg            NMEA2000 message to parse.
+ * \param Start             Output: Start index (first waypoint number in this
+ *                          message set / sequence).
+ * \param nItems            Output: Number of waypoint items encoded in this
+ *                          message.
+ * \param Database          Output: Database identifier.
+ * \param Route             Output: Route identifier.
+ * \param NavDirection      Output: Navigation direction, see
+ *                          \ref tN2kNavigationDirection.
+ * \param SupplementaryData Output: Supplementary data status, see
+ *                          \ref tN2kGenericStatusPair.
+ * \param RouteName         Output: Route name string buffer (may be nullptr if
+ *                          caller does not need the name).
+ * \param RouteNameBufLen   Input: Size of \c RouteName buffer in bytes.
+ * \param ItemsStartIndex   Output: Byte index in \c N2kMsg where the first
+ *                          waypoint item begins. Pass this value by reference
+ *                          into \ref ParseN2kPGN129285Item as the starting
+ *                          index.
+ *
+ * \return true if parsing succeeded, otherwise false.
+ */
 bool ParseN2kPGN129285(const tN2kMsg &N2kMsg,
                        uint16_t &Start,
                        uint16_t &nItems,
@@ -4229,12 +4264,85 @@ bool ParseN2kPGN129285(const tN2kMsg &N2kMsg,
                        char *RouteName, size_t RouteNameBufLen,
                        int &ItemsStartIndex);
 
+
+/************************************************************************//**
+ * \brief Parse PGN 129285 Message "Route / Waypoint List" (Single Item)
+ * \ingroup group_msgParse
+ *
+ * Parses one waypoint item from the variable-length waypoint list within
+ * PGN 129285. The caller must supply the starting byte index (\c idx), which
+ * will be advanced to the next item on success.
+ *
+ * Waypoint item fields:
+ * - Waypoint ID (uint16)
+ * - Waypoint Name (VarStr)
+ * - Waypoint Latitude (1e-07 degrees)
+ * - Waypoint Longitude (1e-07 degrees)
+ *
+ * Typical usage:
+ * - Call \ref ParseN2kPGN129285 to parse the header and get \c ItemsStartIndex
+ * - Set \c idx = ItemsStartIndex
+ * - Call this function repeatedly until \c nItems items are parsed
+ *
+ * \param N2kMsg        NMEA2000 message to parse.
+ * \param idx           Input/Output: Current byte index in message. On success
+ *                      this is advanced to the next item.
+ * \param ID            Output: Waypoint ID.
+ * \param Name          Output: Waypoint name buffer (may be nullptr if caller
+ *                      does not need the name).
+ * \param NameBufLen    Input: Size of \c Name buffer in bytes.
+ * \param Latitude      Output: Waypoint latitude (degrees).
+ * \param Longitude     Output: Waypoint longitude (degrees).
+ *
+ * \return true if one item was parsed successfully, otherwise false.
+ */
 bool ParseN2kPGN129285Item(const tN2kMsg &N2kMsg,
                            int &idx,
                            uint16_t &ID,
                            char *Name, size_t NameBufLen,
                            double &Latitude,
                            double &Longitude);
+
+
+/************************************************************************//**
+ * \brief Parse Message "Route / Waypoint List" (Header) - PGN 129285
+ * \ingroup group_msgParse
+ *
+ * Alias of \ref ParseN2kPGN129285. This alias was introduced to improve the
+ * readability of the source code. See parameter details on
+ * \ref ParseN2kPGN129285.
+ */
+inline bool ParseN2kRouteInfo(const tN2kMsg &N2kMsg,
+                             uint16_t &Start,
+                             uint16_t &nItems,
+                             uint16_t &Database,
+                             uint16_t &Route,
+                             tN2kNavigationDirection &NavDirection,
+                             tN2kGenericStatusPair &SupplementaryData,
+                             char *RouteName, size_t RouteNameBufLen,
+                             int &ItemsStartIndex) {
+  return ParseN2kPGN129285(N2kMsg, Start, nItems, Database, Route,
+                          NavDirection, SupplementaryData,
+                          RouteName, RouteNameBufLen, ItemsStartIndex);
+}
+
+
+/************************************************************************//**
+ * \brief Parse Message "Route / Waypoint List" (Single Item) - PGN 129285
+ * \ingroup group_msgParse
+ *
+ * Alias of \ref ParseN2kPGN129285Item. This alias was introduced to improve
+ * the readability of the source code. See parameter details on
+ * \ref ParseN2kPGN129285Item.
+ */
+inline bool ParseN2kRouteItem(const tN2kMsg &N2kMsg,
+                             int &idx,
+                             uint16_t &ID,
+                             char *Name, size_t NameBufLen,
+                             double &Latitude,
+                             double &Longitude) {
+  return ParseN2kPGN129285Item(N2kMsg, idx, ID, Name, NameBufLen, Latitude, Longitude);
+}
 
 /************************************************************************//**
  * \brief Setting up PGN 129285 Message "Route/WP information"
