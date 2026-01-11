@@ -1677,6 +1677,38 @@ bool ParseN2kPGN129284(const tN2kMsg &N2kMsg, unsigned char& SID, double& Distan
 // Waypoint list
 //*****************************************************************************
 // PGN 129285 - Route and Waypoint List (header)
+
+// Local helper for PGN129285: accept ASCII, skip unsupported string encodings safely.
+static bool GetVarStr129285(const tN2kMsg &N2kMsg, size_t &StrBufSize, char *StrBuf, int &Index) {
+  const size_t totalLen = N2kMsg.GetByte(Index);     // advances Index
+  const uint8_t type    = N2kMsg.GetByte(Index);     // advances Index
+
+  if (totalLen < 2) {                                // invalid length
+    if (StrBuf && StrBufSize > 0) StrBuf[0] = '\0';
+    StrBufSize = 0;
+    return false;
+  }
+
+  const size_t payloadLen = totalLen - 2;
+
+  if (type == 0x01) {                                // ASCII (your existing GetVarStr expects this)
+    if (StrBuf != nullptr) {
+      N2kMsg.GetStr(StrBufSize, StrBuf, payloadLen, 0xff, Index);
+      // GetStr advances Index by payloadLen
+    } else {
+      Index += payloadLen;
+    }
+    StrBufSize = payloadLen;
+    return true;
+  }
+
+  // Unsupported encoding (e.g., Unicode). Skip payload, keep parsing.
+  Index += payloadLen;
+  if (StrBuf && StrBufSize > 0) StrBuf[0] = '\0';
+  StrBufSize = 0;
+  return true;
+}
+
 bool ParseN2kPGN129285(const tN2kMsg &N2kMsg,
                        uint16_t &Start,
                        uint16_t &nItems,
@@ -1705,10 +1737,10 @@ bool ParseN2kPGN129285(const tN2kMsg &N2kMsg,
   if (RouteName && RouteNameBufLen > 0) {
     RouteName[0] = '\0';
     size_t sz = RouteNameBufLen;
-    if (!N2kMsg.GetVarStr(sz, RouteName, idx)) return false;
+    if (!GetVarStr129285(N2kMsg, sz, RouteName, idx)) return false;
   } else {
     size_t sz = 0;
-    if (!N2kMsg.GetVarStr(sz, nullptr, idx)) return false;
+    if (!GetVarStr129285(N2kMsg, sz, nullptr, idx)) return false;
   }
 
   // Reserved byte (0xFF in Set). If missing/truncated, GetByte returns 0xFF anyway.
@@ -1736,10 +1768,10 @@ bool ParseN2kPGN129285Item(const tN2kMsg &N2kMsg,
   if (Name && NameBufLen > 0) {
     Name[0] = '\0';
     size_t sz = NameBufLen;
-    if (!N2kMsg.GetVarStr(sz, Name, idx)) return false;
+    if (!GetVarStr129285(N2kMsg, sz, Name, idx)) return false;
   } else {
     size_t sz = 0;
-    if (!N2kMsg.GetVarStr(sz, nullptr, idx)) return false;
+    if (!GetVarStr129285(N2kMsg, sz, nullptr, idx)) return false;
   }
 
   // Lat/Lon (advances idx)
