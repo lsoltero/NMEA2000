@@ -1675,6 +1675,83 @@ bool ParseN2kPGN129284(const tN2kMsg &N2kMsg, unsigned char& SID, double& Distan
 
 //*****************************************************************************
 // Waypoint list
+//*****************************************************************************
+// PGN 129285 - Route and Waypoint List (header)
+bool ParseN2kPGN129285(const tN2kMsg &N2kMsg,
+                       uint16_t &Start,
+                       uint16_t &nItems,
+                       uint16_t &Database,
+                       uint16_t &Route,
+                       tN2kNavigationDirection &NavDirection,
+                       tN2kGenericStatusPair &SupplementaryData,
+                       char *RouteName, size_t RouteNameBufLen,
+                       int &ItemsStartIndex) {
+  if (N2kMsg.PGN != 129285L) return false;
+
+  int idx = 0;
+
+  // Fixed fields (all advance idx internally)
+  Start    = N2kMsg.Get2ByteUInt(idx);
+  nItems   = N2kMsg.Get2ByteUInt(idx);
+  Database = N2kMsg.Get2ByteUInt(idx);
+  Route    = N2kMsg.Get2ByteUInt(idx);
+
+  const uint8_t b = N2kMsg.GetByte(idx);
+
+  SupplementaryData = (tN2kGenericStatusPair)((b >> 3) & 0x03);
+  NavDirection      = (tN2kNavigationDirection)(b & 0x07);
+
+  // RouteName VarStr (advances idx internally)
+  if (RouteName && RouteNameBufLen > 0) {
+    RouteName[0] = '\0';
+    size_t sz = RouteNameBufLen;
+    if (!N2kMsg.GetVarStr(sz, RouteName, idx)) return false;
+  } else {
+    size_t sz = 0;
+    if (!N2kMsg.GetVarStr(sz, nullptr, idx)) return false;
+  }
+
+  // Reserved byte (0xFF in Set). If missing/truncated, GetByte returns 0xFF anyway.
+  if (idx < N2kMsg.DataLen) {
+    (void)N2kMsg.GetByte(idx);  // advances idx
+  }
+
+  ItemsStartIndex = idx;
+  return true;
+}
+
+bool ParseN2kPGN129285Item(const tN2kMsg &N2kMsg,
+                           int &idx,
+                           uint16_t &ID,
+                           char *Name, size_t NameBufLen,
+                           double &Latitude,
+                           double &Longitude) {
+  if (N2kMsg.PGN != 129285L) return false;
+  if (idx < 0 || idx >= N2kMsg.DataLen) return false;
+
+  // ID (advances idx)
+  ID = N2kMsg.Get2ByteUInt(idx);
+
+  // Name VarStr (advances idx)
+  if (Name && NameBufLen > 0) {
+    Name[0] = '\0';
+    size_t sz = NameBufLen;
+    if (!N2kMsg.GetVarStr(sz, Name, idx)) return false;
+  } else {
+    size_t sz = 0;
+    if (!N2kMsg.GetVarStr(sz, nullptr, idx)) return false;
+  }
+
+  // Lat/Lon (advances idx)
+  Latitude  = N2kMsg.Get4ByteDouble(1e-07, idx, N2kDoubleNA);
+  Longitude = N2kMsg.Get4ByteDouble(1e-07, idx, N2kDoubleNA);
+
+  // If message was truncated, getters return defaults; treat that as parse failure.
+  if (Latitude == N2kDoubleNA || Longitude == N2kDoubleNA) return false;
+
+  return true;
+}
+
 void SetN2kPGN129285(tN2kMsg &N2kMsg, uint16_t Start, uint16_t Database, uint16_t Route,
          tN2kNavigationDirection NavDirection, const char* RouteName, tN2kGenericStatusPair SupplementaryData) {
     N2kMsg.SetPGN(129285L);

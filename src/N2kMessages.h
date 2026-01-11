@@ -4219,6 +4219,23 @@ inline bool ParseN2kNavigationInfo(const tN2kMsg &N2kMsg, unsigned char& SID, do
                             OriginWaypointNumber, DestinationWaypointNumber, DestinationLatitude, DestinationLongitude, WaypointClosingVelocity);
 }
 
+bool ParseN2kPGN129285(const tN2kMsg &N2kMsg,
+                       uint16_t &Start,
+                       uint16_t &nItems,
+                       uint16_t &Database,
+                       uint16_t &Route,
+                       tN2kNavigationDirection &NavDirection,
+                       tN2kGenericStatusPair &SupplementaryData,
+                       char *RouteName, size_t RouteNameBufLen,
+                       int &ItemsStartIndex);
+
+bool ParseN2kPGN129285Item(const tN2kMsg &N2kMsg,
+                           int &idx,
+                           uint16_t &ID,
+                           char *Name, size_t NameBufLen,
+                           double &Latitude,
+                           double &Longitude);
+
 /************************************************************************//**
  * \brief Setting up PGN 129285 Message "Route/WP information"
  * \ingroup group_msgSetUp
