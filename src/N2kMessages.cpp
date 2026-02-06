@@ -58,8 +58,8 @@ void SetN2kPGN129802(tN2kMsg &N2kMsg, uint8_t MessageID, tN2kAISRepeat Repeat, u
    N2kMsg.SetPGN(129802L);
    N2kMsg.Priority=5;
    N2kMsg.AddByte((Repeat & 0x03)<<6 | (MessageID & 0x3f));
-   N2kMsg.Add4ByteUInt(0xc0000000 | (SourceID & 0x3fffffff));
-   N2kMsg.AddByte(0xe0 | (0x1f & AISTransceiverInformation));
+   N2kMsg.Add4ByteUInt(SourceID & 0x3fffffff);
+   N2kMsg.AddByte( ((0x1f & AISTransceiverInformation)<<1) | 0x01); // NMEA reserved must be set 1 and AIS spares 0
    N2kMsg.AddVarStr(SafetyRelatedText);
 }
 
@@ -75,7 +75,7 @@ bool ParseN2kPGN129802(const tN2kMsg &N2kMsg, uint8_t &MessageID, tN2kAISRepeat 
    MessageID=(vb & 0x3f);
    Repeat=(tN2kAISRepeat)(vb>>6 & 0x03);
    SourceID = N2kMsg.Get4ByteUInt(Index) & 0x3fffffff;
-   AISTransceiverInformation = (tN2kAISTransceiverInformation)(N2kMsg.GetByte(Index) & 0x1f);
+   AISTransceiverInformation = (tN2kAISTransceiverInformation)( (N2kMsg.GetByte(Index)>>1) & 0x1f);
    N2kMsg.GetVarStr(SafetyRelatedTextMaxSize, SafetyRelatedText, Index);
 
    return true;
