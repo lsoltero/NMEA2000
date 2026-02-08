@@ -1,5 +1,5 @@
 /*
- * N2kMaretron.h
+ * N2kSeatalkNG.h
  * 
  * Copyright (c) 2019-2025 Luis Soltero,
  *                        Timo Lappalainen, Kave Oy, www.kave.fi, 
@@ -22,8 +22,8 @@
  * SOFTWARE.
 */
 
-#ifndef _N2kMaretron_H_
-#define _N2kMaretron_H_
+#ifndef _N2kSeatalkNG_H_
+#define _N2kSeatalkNG_H_
 
 #include "N2kMsg.h"
 #include "N2kTypes.h"
@@ -49,9 +49,9 @@ enum tN2kSeatalkIndustryCode {
  * \brief Enumeration of Seatalk Alarm status codes
  */                          
 enum tN2kSeatalkAlarmStatus {
-			     N2kStNG_AlarmCondNotMet = 0,
-			     N2kStNG_AlarmCondMetNotSilenced,
-			     N2kStNG_AlarmCondMetSilenced,
+			     N2kStNG_AlarmCondNotMet = 0,           // Alarm cleared
+			     N2kStNG_AlarmCondMetNotSilenced = 1,   // Alarm active, sounding
+			     N2kStNG_AlarmCondMetSilenced = 2,      // Alarm active, acknowledged/silenced
 };
 
 /*************************************************************************//**
@@ -167,6 +167,10 @@ enum tN2kSeatalkAlarmID {
 			 N2kStNG_NoFix					= 108,
 };
 
+/*************************************************************************//**
+ * \enum tN2kSeatalkAlarmGroup
+ * \brief Enumeration of Seatalk Alarm groups/categories
+ */                          
 enum tN2kSeatalkAlarmGroup {
 			    N2kStNG_Instrument = 0,
 			    N2kStNG_Autopilot,
@@ -176,60 +180,111 @@ enum tN2kSeatalkAlarmGroup {
 };
 
 /************************************************************************//**
- * \brief Setting up PGN 65361 for Seatalk-NG Message "Seatalk: Alarm"
+ * \brief Setting up PGN 65288 for Raymarine Seatalk-NG "Alarm"
  *
- * Set, Unset, Silence Alarm
+ * This PGN is sent BY devices TO MFDs to raise alarms.
+ * Set, Unset, or report Alarm status
  *
  * \param N2kMsg          Reference to a N2kMsg Object, 
  *                        Output: NMEA2000 message ready to be send.
  *
  * \param status	  Alarm status to set \ref tN2kSeatalkAlarmStatus
+ *                        0 = Alarm cleared
+ *                        1 = Alarm active, not silenced (sounding)
+ *                        2 = Alarm active, silenced (acknowledged)
  * \param alarm           Alarm to set \ref tN2kSeatalkAlarmID
  * \param group           Instrument group to alarm \ref tN2kSeatalkAlarmGroup
+ * \param priority        Alarm priority. Default is 7
  * \param SID             Sequence identifier. In most cases you can use just 0xff for SID. See \ref secRefTermSID.
  *
  *                        The sequence identifier field is used to tie different PGNs data together to same 
  *                        sampling or calculation time.
- * \param priority        Alarm priority. Default is 7
  *
  */
 
-void SetN2kSeatalkPGN65361(tN2kMsg &N2kMsg, tN2kSeatalkAlarmStatus status, tN2kSeatalkAlarmID alarm, tN2kSeatalkAlarmGroup group, uint16_t priority = 7, uint8_t SID = N2kUInt8NA);
+void SetN2kSeatalkPGN65288(tN2kMsg &N2kMsg, tN2kSeatalkAlarmStatus status, tN2kSeatalkAlarmID alarm, tN2kSeatalkAlarmGroup group, uint16_t priority = 7, uint8_t SID = N2kUInt8NA);
 
 /************************************************************************//**
- * \brief setting up of Seatalk Alarm PGN 65361
+ * \brief Alias for setting up Seatalk Alarm PGN 65288
  *
- * Alis of PGN 65361 added to improve redability. See parameters details on \ref SetN2kSeatalkPGN65361
+ * Alias of PGN 65288 added to improve readability. See parameters details on \ref SetN2kSeatalkPGN65288
  */
 
 inline void SetN2kSeatalkAlarm(tN2kMsg &N2kMsg, tN2kSeatalkAlarmStatus status, tN2kSeatalkAlarmID alarm, tN2kSeatalkAlarmGroup group, uint16_t priority = 7, uint8_t SID = N2kUInt8NA) {
-  return SetN2kSeatalkPGN65361(N2kMsg, status, alarm, group, priority, SID);
+  return SetN2kSeatalkPGN65288(N2kMsg, status, alarm, group, priority, SID);
 }
 
 /************************************************************************//**
- * \brief Parsing of Seatalk Alarm PGN 65361
+ * \brief Parsing of Seatalk Alarm PGN 65288
  * \param N2kMsg          Reference to a N2kMsg Object, 
- *                        Output: NMEA2000 message ready to be send.
+ *                        Input: NMEA2000 message to parse
  *
- * \param status	  Alarm status to set \ref tN2kSeatalkAlarmStatus
- * \param alarm           Alarm to set \ref tN2kSeatalkAlarmID
- * \param group           Instrument group to alarm \ref tN2kSeatalkAlarmGroup
- * \param SID             Sequence identifier. In most cases you can use just 0xff for SID. See \ref secRefTermSID.
+ * \param status	  Alarm status \ref tN2kSeatalkAlarmStatus
+ * \param alarm           Alarm ID \ref tN2kSeatalkAlarmID
+ * \param group           Instrument group \ref tN2kSeatalkAlarmGroup
+ * \param SID             Sequence identifier. See \ref secRefTermSID.
  *
  *                        The sequence identifier field is used to tie different PGNs data together to same 
  *                        sampling or calculation time.
  */
-bool ParseN2kSeatalkPGN65361(const tN2kMsg &N2kMsg, tN2kSeatalkAlarmStatus &status, tN2kSeatalkAlarmID &alarm, tN2kSeatalkAlarmGroup &group, uint8_t &SID);
+bool ParseN2kSeatalkPGN65288(const tN2kMsg &N2kMsg, tN2kSeatalkAlarmStatus &status, tN2kSeatalkAlarmID &alarm, tN2kSeatalkAlarmGroup &group, uint8_t &SID);
 
 /************************************************************************//**
- * \brief Parsing of Seatalk Alarm PGN 65361
+ * \brief Alias for parsing Seatalk Alarm PGN 65288
  *
- * Alis of PGN 65361 added to improve redability. See parameters details on \ref ParseN2kSeatalkPGN65361
+ * Alias of PGN 65288 added to improve readability. See parameters details on \ref ParseN2kSeatalkPGN65288
  */
 inline bool ParseN2kSeatalkAlarm(const tN2kMsg &N2kMsg, tN2kSeatalkAlarmStatus &status, tN2kSeatalkAlarmID &alarm, tN2kSeatalkAlarmGroup &group, uint8_t &SID) {
-  return ParseN2kSeatalkPGN65361(N2kMsg, status, alarm, group, SID);
+  return ParseN2kSeatalkPGN65288(N2kMsg, status, alarm, group, SID);
 }
 
+/************************************************************************//**
+ * \brief Setting up PGN 65361 for Raymarine Seatalk-NG "Silence Alarm"
+ *
+ * This PGN is sent BY MFDs TO devices to silence/acknowledge alarms.
+ * Typically you RECEIVE this message when user silences alarm on MFD.
+ *
+ * \param N2kMsg          Reference to a N2kMsg Object, 
+ *                        Output: NMEA2000 message ready to be send.
+ *
+ * \param alarm           Alarm to silence \ref tN2kSeatalkAlarmID
+ * \param group           Instrument group \ref tN2kSeatalkAlarmGroup
+ * \param SID             Sequence identifier. In most cases you can use just 0xff for SID. See \ref secRefTermSID.
+ *
+ */
+
+void SetN2kSeatalkPGN65361(tN2kMsg &N2kMsg, tN2kSeatalkAlarmID alarm, tN2kSeatalkAlarmGroup group, uint8_t SID = N2kUInt8NA);
+
+/************************************************************************//**
+ * \brief Alias for setting up Seatalk Silence Alarm PGN 65361
+ *
+ * Alias of PGN 65361 added to improve readability. See parameters details on \ref SetN2kSeatalkPGN65361
+ */
+
+inline void SetN2kSeatalkSilenceAlarm(tN2kMsg &N2kMsg, tN2kSeatalkAlarmID alarm, tN2kSeatalkAlarmGroup group, uint8_t SID = N2kUInt8NA) {
+  return SetN2kSeatalkPGN65361(N2kMsg, alarm, group, SID);
+}
+
+/************************************************************************//**
+ * \brief Parsing of Seatalk Silence Alarm PGN 65361
+ * \param N2kMsg          Reference to a N2kMsg Object, 
+ *                        Input: NMEA2000 message to parse
+ *
+ * \param alarm           Alarm to silence \ref tN2kSeatalkAlarmID
+ * \param group           Instrument group \ref tN2kSeatalkAlarmGroup
+ * \param SID             Sequence identifier. See \ref secRefTermSID.
+ *
+ */
+bool ParseN2kSeatalkPGN65361(const tN2kMsg &N2kMsg, tN2kSeatalkAlarmID &alarm, tN2kSeatalkAlarmGroup &group, uint8_t &SID);
+
+/************************************************************************//**
+ * \brief Alias for parsing Seatalk Silence Alarm PGN 65361
+ *
+ * Alias of PGN 65361 added to improve readability. See parameters details on \ref ParseN2kSeatalkPGN65361
+ */
+inline bool ParseN2kSeatalkSilenceAlarm(const tN2kMsg &N2kMsg, tN2kSeatalkAlarmID &alarm, tN2kSeatalkAlarmGroup &group, uint8_t &SID) {
+  return ParseN2kSeatalkPGN65361(N2kMsg, alarm, group, SID);
+}
 
 
 #endif
